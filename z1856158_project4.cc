@@ -19,13 +19,18 @@ using namespace std;
 
 int READ_THREADS;                   // number of read threads
 int WRITE_THREADS;                  // number of write threads
-int readcount = 0;                  // number of active readers
+int read_count = 0;                  // number of active readers
+
+sem_t rw_sem;                   // used for readers and writers
+sem_t cs_sem;                   // used for critical sections for readers
 
 char* phrase = "General Kenobi";
 
 
 void *writer(void *data)
 {
+    
+
     // variables
     char *temp = (char*)data;
 
@@ -46,7 +51,17 @@ void *writer(void *data)
 
 void *reader(void *data)
 {
-    readcount++;
+    char *temp = (char*)data;
+    read_count++;
+    printf("read_count incremented to: %d\n", read_count);
+
+    for(int i = 0; temp[i] != '\0'; i++)
+    {
+        printf("reader %d is reading ... content : %s\n", VAR, temp);
+    }
+
+    read_count--;
+    printf("read_count decremented to: %d\n", read_count);
 
 }
 
@@ -67,7 +82,16 @@ int main (int argc, char *argv[])
     printf("Number of writer threads: %d\n\n", WRITE_THREADS);
 
     // Initialize semaphores
-
+    if(sem_init(&rw_sem, 0, 1) == -1)
+    {
+        printf("Error: Failed to initialize semaphore\n");
+        exit(-1);
+    }
+    if(sem_init(&cs_sem, 0, 1) == -1)
+    {
+        printf("Error: Failed to initialize semaphore\n");
+        exit(-1);
+    }
 
     // Create read/write threads
     pthread_t read[READ_THREADS], write[WRITE_THREADS];
@@ -94,13 +118,12 @@ int main (int argc, char *argv[])
     }
 
 
-    // Wait for read threads to finish
+    // Wait for read & write threads to finish
     pthread_join(read, NULL);
-
-    // Wait for write threads to finish
     pthread_join(write, NULL);
 
     // Cleanup & exit
-
+    sem_destroy(&rw_sem);
+    sem_destroy(&cs_sem);
     pthread_exit(NULL);
 }
