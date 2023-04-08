@@ -29,7 +29,7 @@ char* phrase = "General Kenobi";
 
 void *writer(void *data)
 {
-    
+    sem_wait(&rw_sem);          // ENTER CRITICAL
 
     // variables
     char *temp = (char*)data;
@@ -46,6 +46,8 @@ void *writer(void *data)
         // sleep 1 second
         sleep(1);
     }
+
+    sem_post(&rw_sem);          // EXIT CRITICAL
     pthread_exit(NULL);
 }
 
