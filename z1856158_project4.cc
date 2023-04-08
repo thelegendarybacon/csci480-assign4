@@ -29,7 +29,7 @@ char* phrase = "General Kenobi";
 
 void *writer(void *data)
 {
-    sem_wait(&rw_sem);          // ENTER CRITICAL
+    sem_wait(&rw_sem);
 
     // variables
     char *temp = (char*)data;
@@ -47,24 +47,37 @@ void *writer(void *data)
         sleep(1);
     }
 
-    sem_post(&rw_sem);          // EXIT CRITICAL
+    sem_post(&rw_sem);
     pthread_exit(NULL);
 }
 
 void *reader(void *data)
 {
-    char *temp = (char*)data;
+    sem_wait(&cs_sem);          // ENTER CRITICAL
+
     read_count++;
     printf("read_count incremented to: %d\n", read_count);
 
+    if(read_count == 1)
+        sem_wait(&rw_sem);
+    sem_post(&cs_sem);          // EXIT CRITICAL
+
+    // Perform reading
+    char *temp = (char*)data;
     for(int i = 0; temp[i] != '\0'; i++)
     {
         printf("reader %d is reading ... content : %s\n", VAR, temp);
     }
 
+    sem_wait(&cs_sem);          // ENTER CRITICAL
+
     read_count--;
     printf("read_count decremented to: %d\n", read_count);
 
+    if(read_count == 0)
+        sem_post(&rw_sem);
+
+    pthread_exit(NULL);
 }
 
 int main (int argc, char *argv[])
@@ -75,8 +88,6 @@ int main (int argc, char *argv[])
         READ_THREADS = atoi(argv[1]);
         WRITE_THREADS = atoi(argv[2]);
     }
-
-
 
     // Initial Output
     printf("***** Reader-Write Problem Simulation *****\n");
