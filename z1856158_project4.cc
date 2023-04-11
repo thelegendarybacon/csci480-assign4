@@ -26,7 +26,7 @@ int write_count = 0;                // number of active writers
 sem_t rw_sem;                       // used for readers and writers
 sem_t cs_sem;                       // used for critical sections for readers
 
-char* phrase = "General Kenobi";
+char phrase[] = "General Kenobi";
 
 
 void *writer(void *data)
@@ -52,6 +52,7 @@ void *writer(void *data)
 
     sem_post(&rw_sem);
 
+    printf("writer %d is exiting...\n", id);
     pthread_exit(NULL);
 }
 
@@ -81,6 +82,7 @@ void *reader(void *data)
     if(read_count == 0)         // EXIT CRITICAL
         sem_post(&rw_sem);
 
+    printf("reader %d is exiting...\n", id);
     pthread_exit(NULL);
 }
 
@@ -142,8 +144,13 @@ int main (int argc, char *argv[])
     for (int i = 0; i < WRITE_THREADS; i++)
         pthread_join(write[i], NULL);
 
+    printf("All threads are done\n");
+
     // Cleanup & exit
     sem_destroy(&rw_sem);
     sem_destroy(&cs_sem);
+
+    printf("Resources cleaned up\n");
+
     pthread_exit(NULL);
 }
