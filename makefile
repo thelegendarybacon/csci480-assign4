@@ -1,13 +1,13 @@
 # Standard compiler variables
-ARGS = g++ -Wall -Werror -std=c++11 -lpthread
+ARGS = g++ -o
 
 # Rules start here
 
-z1856158_project4: z1856158_project4.o
-	$(ARGS) -o z1856158_project4 z1856158_project4.o
+z1856158_project4: z1856158_project4.cc
+	$(ARGS) z1856158_project4 z1856158_project4.cc -lpthread
 
-z1856158_project4.o: z1856158_project4.cc
-	$(ARGS) -c z1856158_project4.cc
+z1856158_project4_p2: z1856158_project4_p2.cc
+	$(ARGS) z1856158_project4_p2 z1856158_project4_p2.cc -lpthread
 
 clean:
-	-rm -f *.o z1856158_project4
+	-rm -f *.o z1856158_project4 z1856158_project4_p2

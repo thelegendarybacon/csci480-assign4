@@ -63,12 +63,17 @@ void *reader(void *data)
         sem_wait(&b_sem);
 
         printf("reader %d is reading ... content : %s\n", r_id, phrase);
-        
-        for(int i = 0; i < (WRITE_THREADS - READ_THREADS); i++)
-            sem_post(&a_sem);
+
+        sem_post(&a_sem);
 
         sleep(1);
     }
+
+    // Calls semaphore for remaining waiting writers
+    int leftovers = WRITE_THREADS - READ_THREADS;
+    printf("There are %d reamining writers waiting on semaphore.\n");
+    for(int i = 0; i < leftovers; i++)
+        sem_post(&a_sem);
 
     printf("reader %d is exiting...\n", r_id);
     pthread_exit(NULL);
@@ -141,8 +146,8 @@ int main (int argc, char *argv[])
     printf("All threads are done\n");
 
     // Cleanup & exit
-    sem_destroy(&rw_sem);
-    sem_destroy(&cs_sem);
+    sem_destroy(&a_sem);
+    sem_destroy(&b_sem);
 
     printf("Resources cleaned up\n");
 
