@@ -35,16 +35,17 @@ void *writer(void *data)
 
     // variables
     char *temp = (char*)data;
-    int id = write_count++;
+    int w_id = write_count;
+    write_count++;
 
     // loops through string
-    for(int i = 0; temp[i] != '\0'; i++)
+    for(int i = 0; strlen(temp) > 0; i++)
     {
         // print currently writing
-        printf("writer %d is writing...\n", id);
+        printf("writer %d is writing...\n", w_id);
 
         // cut off last character of string
-        temp[strlen(temp)-1] = '\0';
+        temp[strlen(temp) - 1] = '\0';
 
         // sleep 1 second
         sleep(1);
@@ -52,7 +53,7 @@ void *writer(void *data)
 
     sem_post(&rw_sem);
 
-    printf("writer %d is exiting...\n", id);
+    printf("writer %d is exiting...\n", w_id);
     pthread_exit(NULL);
 }
 
@@ -60,18 +61,23 @@ void *reader(void *data)
 {
     sem_wait(&cs_sem);          // ENTER CRITICAL
 
-    int id = read_count++;
+    int r_id = read_count;
+    read_count++;
+
     printf("read_count incremented to: %d\n", read_count);
 
     if(read_count == 1)
         sem_wait(&rw_sem);
+    
     sem_post(&cs_sem);          // EXIT CRITICAL
 
     // Perform reading
     char *temp = (char*)data;
-    for(int i = 0; temp[i] != '\0'; i++)
+    for(int i = 0; strlen(temp) > 0; i++)
     {
-        printf("reader %d is reading ... content : %s\n", id, temp);
+        printf("reader %d is reading ... content : %s\n", r_id, temp);
+
+        sleep(1);
     }
 
     sem_wait(&cs_sem);          // ENTER CRITICAL
@@ -79,10 +85,12 @@ void *reader(void *data)
     read_count--;
     printf("read_count decremented to: %d\n", read_count);
 
-    if(read_count == 0)         // EXIT CRITICAL
+    if(read_count == 0)
         sem_post(&rw_sem);
+    
+    sem_post(&cs_sem);          // EXIT CRITICAL
 
-    printf("reader %d is exiting...\n", id);
+    printf("reader %d is exiting...\n", r_id);
     pthread_exit(NULL);
 }
 
@@ -94,9 +102,15 @@ int main (int argc, char *argv[])
         READ_THREADS = atoi(argv[1]);
         WRITE_THREADS = atoi(argv[2]);
     }
+    else
+    {
+        printf("Invalid arguments. Usage: ./filename.exe (# read threads) (# write threads)\n");
+        printf("Example: ./filename.exe 5 3\n");
+        exit(-1);
+    }
 
     // Initial Output
-    printf("***** Reader-Write Problem Simulation *****\n");
+    printf("***** Reader-Writer Problem Simulation *****\n");
     printf("Number of reader threads: %d\n", READ_THREADS);
     printf("Number of writer threads: %d\n\n", WRITE_THREADS);
 

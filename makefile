@@ -1,5 +1,5 @@
 # Standard compiler variables
-ARGS = gcc -Wall -Werror -std=c++11 -lpthread
+ARGS = g++ -Wall -Werror -std=c++11 -lpthread
 
 # Rules start here
 
