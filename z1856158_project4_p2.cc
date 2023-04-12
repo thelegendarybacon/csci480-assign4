@@ -7,7 +7,8 @@ TA: Daniel Feller
 Date Due:  4/11/2023
 
 Purpose: Implements a solution to the reader/writer problem using
-         the pthread library.
+         the pthread library, but alternates between reading and
+         writing
 *********************************************************************/
 #include <pthread.h>
 #include <stdio.h>
@@ -69,7 +70,7 @@ void *reader(void *data)
         sleep(1);
     }
 
-    // Calls semaphore for remaining waiting writers
+    // Signals semaphore for remaining waiting writers
     int leftovers = WRITE_THREADS - READ_THREADS;
     printf("There are %d reamining writers waiting on semaphore.\n");
     for(int i = 0; i < leftovers; i++)
