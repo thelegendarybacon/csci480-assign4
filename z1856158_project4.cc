@@ -21,37 +21,34 @@ using namespace std;
 int READ_THREADS;                   // number of read threads
 int WRITE_THREADS;                  // number of write threads
 int read_count = 0;                 // number of active readers
-int write_count = 0;                // number of active writers
 
 sem_t rw_sem;                       // used for readers and writers
 sem_t cs_sem;                       // used for critical sections for readers
 
-char phrase[] = "General Kenobi";
+char phrase[] = "Have you heard the tragedy of Darth Plagueis the Wise.";
 
 
 void *writer(void *data)
 {
-    sem_wait(&rw_sem);
-
     // variables
-    char *temp = (char*)data;
-    int w_id = write_count;
-    write_count++;
+    long w_id = (long)data;
 
     // loops through string
-    for(int i = 0; strlen(temp) > 0; i++)
+    for(int i = 0; strlen(phrase) > 0; i++)
     {
+        sem_wait(&rw_sem);
+
         // print currently writing
         printf("writer %d is writing...\n", w_id);
 
         // cut off last character of string
-        temp[strlen(temp) - 1] = '\0';
+        phrase[strlen(phrase) - 1] = '\0';
+
+        sem_post(&rw_sem);
 
         // sleep 1 second
         sleep(1);
     }
-
-    sem_post(&rw_sem);
 
     printf("writer %d is exiting...\n", w_id);
     pthread_exit(NULL);
@@ -59,36 +56,35 @@ void *writer(void *data)
 
 void *reader(void *data)
 {
-    sem_wait(&cs_sem);          // ENTER CRITICAL
+    // Initialize variables
+    long r_id = (long)data;
 
-    int r_id = read_count;
-    read_count++;
-
-    printf("read_count incremented to: %d\n", read_count);
-
-    if(read_count == 1)
-        sem_wait(&rw_sem);
-    
-    sem_post(&cs_sem);          // EXIT CRITICAL
-
-    // Perform reading
-    char *temp = (char*)data;
-    for(int i = 0; strlen(temp) > 0; i++)
+    for(int i = 0; strlen(phrase) > 0; i++)
     {
-        printf("reader %d is reading ... content : %s\n", r_id, temp);
+        sem_wait(&cs_sem);          // ENTER CRITICAL
+
+        read_count++;
+        printf("read_count incremented to: %d\n", read_count);
+
+        if(read_count == 1)
+            sem_wait(&rw_sem);
+        
+        sem_post(&cs_sem);          // EXIT CRITICAL
+
+        printf("reader %d is reading ... content : %s\n", r_id, phrase);
+
+        sem_wait(&cs_sem);          // ENTER CRITICAL
+
+        read_count--;
+        printf("read_count decremented to: %d\n", read_count);
+
+        if(read_count == 0)
+            sem_post(&rw_sem);
+        
+        sem_post(&cs_sem);          // EXIT CRITICAL
 
         sleep(1);
     }
-
-    sem_wait(&cs_sem);          // ENTER CRITICAL
-
-    read_count--;
-    printf("read_count decremented to: %d\n", read_count);
-
-    if(read_count == 0)
-        sem_post(&rw_sem);
-    
-    sem_post(&cs_sem);          // EXIT CRITICAL
 
     printf("reader %d is exiting...\n", r_id);
     pthread_exit(NULL);
@@ -130,9 +126,9 @@ int main (int argc, char *argv[])
     pthread_t read[READ_THREADS], write[WRITE_THREADS];
     int rc1, rc2;
 
-    for(int a = 0; a < READ_THREADS; a++)
+    for(long a = 0; a < READ_THREADS; a++)
     {
-        rc1 = pthread_create(&read[a], NULL, reader, (void *)phrase);
+        rc1 = pthread_create(&read[a], NULL, reader, (void *)a);
         if(rc1)
         {
             printf("ERROR; return code from pthread_create() is %d\n", rc1);
@@ -140,9 +136,9 @@ int main (int argc, char *argv[])
         }
     }
 
-    for(int b = 0; b < WRITE_THREADS; b++)
+    for(long b = 0; b < WRITE_THREADS; b++)
     {
-        rc2 = pthread_create(&write[b], NULL, writer, (void *)phrase);
+        rc2 = pthread_create(&write[b], NULL, writer, (void *)b);
         if(rc2)
         {
             printf("ERROR; return code from pthread_create() is %d\n", rc2);
